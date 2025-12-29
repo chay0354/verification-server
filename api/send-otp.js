@@ -1,18 +1,20 @@
 // Vercel Serverless Function - Send OTP via Twilio
 const twilio = require('twilio');
 
-exports.handler = async (event, context) => {
+module.exports = async (req, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ success: false, error: 'Method not allowed' })
-    };
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   try {
@@ -23,31 +25,17 @@ exports.handler = async (event, context) => {
 
     // Validate environment variables
     if (!accountSid || !authToken || !verifyServiceSid) {
-      return {
-        statusCode: 500,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          success: false, 
-          error: 'Server configuration error. Missing Twilio credentials.' 
-        })
-      };
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Server configuration error. Missing Twilio credentials.' 
+      });
     }
 
     // Parse request body
-    const { phoneNumber } = JSON.parse(event.body);
+    const { phoneNumber } = req.body;
 
     if (!phoneNumber) {
-      return {
-        statusCode: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ success: false, error: 'Phone number is required' })
-      };
+      return res.status(400).json({ success: false, error: 'Phone number is required' });
     }
 
     // Create Twilio client
@@ -62,32 +50,18 @@ exports.handler = async (event, context) => {
         channel: 'sms' 
       });
 
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        success: true,
-        verificationSid: verification.sid,
-        message: 'Verification code sent'
-      })
-    };
+    return res.status(200).json({
+      success: true,
+      verificationSid: verification.sid,
+      message: 'Verification code sent'
+    });
 
   } catch (error) {
     console.error('Error sending OTP:', error);
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to send verification code'
-      })
-    };
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to send verification code'
+    });
   }
 };
 

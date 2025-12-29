@@ -1,18 +1,20 @@
 // Vercel Serverless Function - Verify OTP via Twilio
 const twilio = require('twilio');
 
-exports.handler = async (event, context) => {
+module.exports = async (req, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ success: false, error: 'Method not allowed' })
-    };
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   try {
@@ -23,34 +25,20 @@ exports.handler = async (event, context) => {
 
     // Validate environment variables
     if (!accountSid || !authToken || !verifyServiceSid) {
-      return {
-        statusCode: 500,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          success: false, 
-          error: 'Server configuration error. Missing Twilio credentials.' 
-        })
-      };
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Server configuration error. Missing Twilio credentials.' 
+      });
     }
 
     // Parse request body
-    const { phoneNumber, code } = JSON.parse(event.body);
+    const { phoneNumber, code } = req.body;
 
     if (!phoneNumber || !code) {
-      return {
-        statusCode: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          success: false, 
-          error: 'Phone number and code are required' 
-        })
-      };
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Phone number and code are required' 
+      });
     }
 
     // Create Twilio client
@@ -66,44 +54,23 @@ exports.handler = async (event, context) => {
       });
 
     if (verificationCheck.status === 'approved') {
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          success: true,
-          message: 'Phone number verified successfully'
-        })
-      };
+      return res.status(200).json({
+        success: true,
+        message: 'Phone number verified successfully'
+      });
     } else {
-      return {
-        statusCode: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          success: false,
-          error: 'Invalid verification code'
-        })
-      };
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid verification code'
+      });
     }
 
   } catch (error) {
     console.error('Error verifying OTP:', error);
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to verify code'
-      })
-    };
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to verify code'
+    });
   }
 };
 
