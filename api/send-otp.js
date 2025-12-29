@@ -31,8 +31,19 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Parse request body
-    const { phoneNumber } = req.body;
+    // Parse request body - Vercel automatically parses JSON
+    let body = req.body;
+    
+    // If body is a string, parse it
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return res.status(400).json({ success: false, error: 'Invalid JSON in request body' });
+      }
+    }
+    
+    const { phoneNumber } = body || {};
 
     if (!phoneNumber) {
       return res.status(400).json({ success: false, error: 'Phone number is required' });
