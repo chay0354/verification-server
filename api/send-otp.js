@@ -12,9 +12,25 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
+  // Handle GET requests with helpful message
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      success: false,
+      message: 'This endpoint requires a POST request',
+      usage: {
+        method: 'POST',
+        url: '/api/send-otp',
+        body: {
+          phoneNumber: '+9720543456305'
+        }
+      },
+      example: 'Use this endpoint from your HTML form, not directly in browser'
+    });
+  }
+
   // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
+    return res.status(405).json({ success: false, error: 'Method not allowed. Use POST method.' });
   }
 
   try {
