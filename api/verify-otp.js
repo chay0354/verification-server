@@ -35,12 +35,10 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Get environment variables
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
 
-    // Validate environment variables
     if (!accountSid || !authToken || !verifyServiceSid) {
       return res.status(500).json({ 
         success: false, 
