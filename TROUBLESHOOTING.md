@@ -102,3 +102,7 @@ All should export: `module.exports = async (req, res) => {}`
 3. Check if functions appear in Vercel Dashboard → Functions tab
 4. Verify the project root directory is correct (should be `./`)
 
+
+
+
+
